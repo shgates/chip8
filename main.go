@@ -1,7 +1,8 @@
 package main
 
-import "fmt"
+import "log"
 
 func main() {
-	fmt.Println("test")
+	log.Println("Running CHIP-8")
+	Run()
 }
