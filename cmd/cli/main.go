@@ -1,7 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/shgates/chip8/emulator"
+)
 
 func main() {
 	fmt.Println("Running CLI")
+
+	// Do CLI stuff
+
+	emulator.Run()
 }
