@@ -1,5 +1,7 @@
 package main
 
+import "errors"
+
 const (
 	MEMORY_SIZE    = 4096
 	STACK_SIZE     = 16
@@ -45,6 +47,7 @@ type Chip8 struct {
 
 	shouldDraw bool
 	beeper     func()
+	rom        string
 }
 
 func NewChip8() *Chip8 {
@@ -64,6 +67,16 @@ func NewChip8() *Chip8 {
 func (c *Chip8) AddBeep(fn func()) {
 	c.beeper = fn
 }
+
+func (c *Chip8) LoadROM(rom string) error {
+	if len(rom) == 0 {
+		return errors.New("rom doesn't exist")
+	}
+	c.rom = rom
+	return nil
+}
+
+func (c Chip8) Run() {}
 
 /* STANDARD CHIP-8 INSTRUCTIONS */
 
