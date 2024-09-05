@@ -68,6 +68,7 @@ func (c *Chip8) AddBeep(fn func()) {
 	c.beeper = fn
 }
 
+// Load ROM.
 func (c *Chip8) LoadROM(rom string) error {
 	if len(rom) == 0 {
 		return errors.New("rom doesn't exist")
@@ -76,7 +77,39 @@ func (c *Chip8) LoadROM(rom string) error {
 	return nil
 }
 
+// Run the emulator.
 func (c Chip8) Run() {}
+
+// Execute the next instruction.
+func (c *Chip8) NextInstruction(instruction uint16) {
+	switch instruction {
+	case 0x00E0:
+		c.i00E0()
+	case 0x00EE:
+		c.i00EE()
+	case 0x1000:
+		c.i1nnn(instruction & 0x0FFF)
+	case 0x2000:
+		c.i2nnn(instruction & 0x0FFF)
+		/* TODO */
+	case 0x3000:
+		c.i3xkk(0x0000, 0x0000)
+	case 0x4000:
+		c.i4xkk(0x0000, 0x0000)
+	case 0x5000:
+		c.i5xy0(0x0000, 0x0000)
+	case 0x6000:
+		c.i6xkk(0x0000, 0x0000)
+	case 0x7000:
+		c.i7xkk(0x0000, 0x0000)
+	case 0x8000:
+		switch instruction & 0x000F {
+		}
+	case 0x9000:
+		c.i9xy0(0x0000, 0x0000)
+	}
+	// Create more statements for the others instructions
+}
 
 /* STANDARD CHIP-8 INSTRUCTIONS */
 
@@ -120,7 +153,7 @@ func (c *Chip8) i2nnn(addr uint16) {
 // Skip next instruction if Vx = kk.
 func (c *Chip8) i3xkk(Vx uint8, kk uint8) {
 	if Vx == kk {
-		c.pc = c.pc + 2
+		c.pc += 2
 	}
 }
 
@@ -129,7 +162,7 @@ func (c *Chip8) i3xkk(Vx uint8, kk uint8) {
 // Skip next instruction if Vx != kk.
 func (c *Chip8) i4xkk(Vx uint8, kk uint8) {
 	if Vx != kk {
-		c.pc = c.pc + 2
+		c.pc += 2
 	}
 }
 
@@ -138,7 +171,7 @@ func (c *Chip8) i4xkk(Vx uint8, kk uint8) {
 // Skip next instruction if Vx = Vy.
 func (c *Chip8) i5xy0(Vx uint8, Vy uint8) {
 	if Vx == Vy {
-		c.pc = c.pc + 2
+		c.pc += 2
 	}
 }
 
