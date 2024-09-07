@@ -43,7 +43,7 @@ type Chip8 struct {
 	sp uint8  // Stack Pointer. It is used to point to the topmost level of the stack.
 
 	// Display buffer
-	display [DISPLAY_WIDTH][DISPLAY_HEIGHT]uint8
+	display [DISPLAY_WIDTH * DISPLAY_HEIGHT]uint8
 
 	shouldDraw bool
 	beeper     func()
@@ -57,8 +57,8 @@ func NewChip8() *Chip8 {
 		beeper:     func() {},
 	}
 
-	for i := 0; i < len(sprites); i++ {
-		chip8.memory[i] = sprites[i]
+	for i, sprite := range sprites {
+		chip8.memory[i] = sprite
 	}
 
 	return &chip8
@@ -80,35 +80,72 @@ func (c *Chip8) LoadROM(rom string) error {
 // Run the emulator.
 func (c Chip8) Run() {}
 
-// Execute the next instruction.
+// Executes Chip-8's next instruction.
 func (c *Chip8) NextInstruction(instruction uint16) {
-	switch instruction {
-	case 0x00E0:
-		c.i00E0()
-	case 0x00EE:
-		c.i00EE()
+	switch instruction & 0xF000 {
+	case 0x0000:
+		switch instruction & 0x0FFF {
+		case 0x00E0:
+			c.i00E0()
+		case 0x00EE:
+			c.i00EE()
+
+		}
+
 	case 0x1000:
 		c.i1nnn(instruction & 0x0FFF)
 	case 0x2000:
 		c.i2nnn(instruction & 0x0FFF)
 		/* TODO */
 	case 0x3000:
-		c.i3xkk(0x0000, 0x0000)
+		c.i3xkk(uint8(instruction&0x0F00), uint8(instruction&0x00FF))
 	case 0x4000:
-		c.i4xkk(0x0000, 0x0000)
+		c.i4xkk(uint8(instruction&0x0F00), uint8(instruction&0x00FF))
 	case 0x5000:
-		c.i5xy0(0x0000, 0x0000)
+		c.i5xy0(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
 	case 0x6000:
-		c.i6xkk(0x0000, 0x0000)
+		c.i6xkk(uint8(instruction&0x0F00), uint8(instruction&0x00FF))
 	case 0x7000:
-		c.i7xkk(0x0000, 0x0000)
+		c.i7xkk(uint8(instruction&0x0F00), uint8(instruction&0x00FF))
 	case 0x8000:
 		switch instruction & 0x000F {
+		case 0x0000:
+			c.i8xy0(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		case 0x0001:
+			c.i8xy1(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		case 0x0002:
+			c.i8xy2(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		case 0x0003:
+			c.i8xy3(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		case 0x0004:
+			c.i8xy4(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		case 0x0005:
+			c.i8xy5(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		case 0x0006:
+			c.i8xy6(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		case 0x0007:
+			c.i8xy7(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		case 0x000E:
+			c.i8xyE(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
 		}
 	case 0x9000:
 		c.i9xy0(0x0000, 0x0000)
+		// Create more statements for the others instructions
+	case 0xA000:
+		c.iAnnn()
+	case 0xB000:
+		c.iBnnn()
+	case 0xC000:
+		c.iCxkk()
+	case 0xD000:
+		c.iDxyn()
+	case 0xE000:
+		switch instruction {
+		case 0xE:
+		}
+	case 0xF000:
+
 	}
-	// Create more statements for the others instructions
 }
 
 /* STANDARD CHIP-8 INSTRUCTIONS */
@@ -117,10 +154,8 @@ func (c *Chip8) NextInstruction(instruction uint16) {
 //
 // Clear the display.
 func (c *Chip8) i00E0() {
-	for i, row := range c.display {
-		for j := range row {
-			c.display[i][j] = 0
-		}
+	for i := range c.display {
+		c.display[i] = 0x00
 	}
 }
 
