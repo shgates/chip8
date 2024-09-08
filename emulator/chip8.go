@@ -1,6 +1,8 @@
 package emulator
 
-import "errors"
+import (
+	"errors"
+)
 
 const (
 	MEMORY_SIZE    = 4096
@@ -48,6 +50,9 @@ type Chip8 struct {
 	shouldDraw bool
 	beeper     func()
 	rom        string
+
+	// Util struct to do some conversions
+	conv Converter
 }
 
 func NewChip8() *Chip8 {
@@ -84,66 +89,67 @@ func (c Chip8) Run() {}
 func (c *Chip8) NextInstruction(instruction uint16) {
 	switch instruction & 0xF000 {
 	case 0x0000:
-		switch instruction & 0x0FFF {
+		switch instruction & 0x00FF {
 		case 0x00E0:
 			c.i00E0()
 		case 0x00EE:
 			c.i00EE()
-
 		}
-
 	case 0x1000:
-		c.i1nnn(instruction & 0x0FFF)
+		c.i1nnn(c.conv.iToNnn(instruction))
 	case 0x2000:
-		c.i2nnn(instruction & 0x0FFF)
-		/* TODO */
+		c.i2nnn(c.conv.iToNnn(instruction))
 	case 0x3000:
-		c.i3xkk(uint8(instruction&0x0F00), uint8(instruction&0x00FF))
+		c.i3xkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
 	case 0x4000:
-		c.i4xkk(uint8(instruction&0x0F00), uint8(instruction&0x00FF))
+		c.i4xkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
 	case 0x5000:
-		c.i5xy0(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+		c.i5xy0(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 	case 0x6000:
-		c.i6xkk(uint8(instruction&0x0F00), uint8(instruction&0x00FF))
+		c.i6xkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
 	case 0x7000:
-		c.i7xkk(uint8(instruction&0x0F00), uint8(instruction&0x00FF))
+		c.i7xkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
 	case 0x8000:
 		switch instruction & 0x000F {
 		case 0x0000:
-			c.i8xy0(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xy0(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x0001:
-			c.i8xy1(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xy1(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x0002:
-			c.i8xy2(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xy2(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x0003:
-			c.i8xy3(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xy3(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x0004:
-			c.i8xy4(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xy4(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x0005:
-			c.i8xy5(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xy5(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x0006:
-			c.i8xy6(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xy6(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x0007:
-			c.i8xy7(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xy7(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x000E:
-			c.i8xyE(uint8(instruction&0x0F00), uint8(instruction&0x00F0))
+			c.i8xyE(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		}
 	case 0x9000:
-		c.i9xy0(0x0000, 0x0000)
-		// Create more statements for the others instructions
+		c.i9xy0(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 	case 0xA000:
-		c.iAnnn()
+		c.iAnnn(c.conv.iToNnn(instruction))
 	case 0xB000:
-		c.iBnnn()
+		c.iBnnn(c.conv.iToNnn(instruction))
 	case 0xC000:
-		c.iCxkk()
+		c.iCxkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
 	case 0xD000:
-		c.iDxyn()
+		c.iDxyn(c.conv.iToVx(instruction), c.conv.iToVy(instruction), c.conv.iToN(instruction))
 	case 0xE000:
-		switch instruction {
-		case 0xE:
+		switch instruction & 0x00FF {
+		case 0x009E:
+
+		case 0x00A1:
+
 		}
 	case 0xF000:
+		switch instruction & 0x0000 {
+		}
 
 	}
 }
@@ -311,32 +317,32 @@ func (c *Chip8) i8xyE(Vx uint8, Vy uint8) {
 
 func (c *Chip8) i9xy0(Vx uint8, Vy uint8) {}
 
-func (c *Chip8) iAnnn() {}
+func (c *Chip8) iAnnn(addr uint16) {}
 
-func (c *Chip8) iBnnn() {}
+func (c *Chip8) iBnnn(addr uint16) {}
 
-func (c *Chip8) iCxkk() {}
+func (c *Chip8) iCxkk(Vx uint8, kk uint8) {}
 
-func (c *Chip8) iDxyn() {}
+func (c *Chip8) iDxyn(Vx uint8, Vy uint8, n uint8) {}
 
-func (c *Chip8) iEx9E() {}
+func (c *Chip8) iEx9E(Vx uint8) {}
 
-func (c *Chip8) iExA1() {}
+func (c *Chip8) iExA1(Vx uint8) {}
 
-func (c *Chip8) iFx07() {}
+func (c *Chip8) iFx07(Vx uint8) {}
 
-func (c *Chip8) iFx0A() {}
+func (c *Chip8) iFx0A(Vx uint8) {}
 
-func (c *Chip8) iFx15() {}
+func (c *Chip8) iFx15(Vx uint8) {}
 
-func (c *Chip8) iFx18() {}
+func (c *Chip8) iFx18(Vx uint8) {}
 
-func (c *Chip8) iFx1E() {}
+func (c *Chip8) iFx1E(Vx uint8) {}
 
-func (c *Chip8) iFx29() {}
+func (c *Chip8) iFx29(Vx uint8) {}
 
-func (c *Chip8) iFx33() {}
+func (c *Chip8) iFx33(Vx uint8) {}
 
-func (c *Chip8) iFx55() {}
+func (c *Chip8) iFx55(Vx uint8) {}
 
-func (c *Chip8) iFx65() {}
+func (c *Chip8) iFx65(Vx uint8) {}
