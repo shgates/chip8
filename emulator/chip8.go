@@ -100,15 +100,15 @@ func (c *Chip8) NextInstruction(instruction uint16) {
 	case 0x2000:
 		c.i2nnn(c.conv.iToNnn(instruction))
 	case 0x3000:
-		c.i3xkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
+		c.i3xkk(c.conv.iToVx(instruction), c.conv.iToKk(instruction))
 	case 0x4000:
-		c.i4xkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
+		c.i4xkk(c.conv.iToVx(instruction), c.conv.iToKk(instruction))
 	case 0x5000:
 		c.i5xy0(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 	case 0x6000:
-		c.i6xkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
+		c.i6xkk(c.conv.iToVx(instruction), c.conv.iToKk(instruction))
 	case 0x7000:
-		c.i7xkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
+		c.i7xkk(c.conv.iToVx(instruction), c.conv.iToKk(instruction))
 	case 0x8000:
 		switch instruction & 0x000F {
 		case 0x0000:
@@ -137,7 +137,7 @@ func (c *Chip8) NextInstruction(instruction uint16) {
 	case 0xB000:
 		c.iBnnn(c.conv.iToNnn(instruction))
 	case 0xC000:
-		c.iCxkk(c.conv.iToVx(instruction), c.conv.iTokk(instruction))
+		c.iCxkk(c.conv.iToVx(instruction), c.conv.iToKk(instruction))
 	case 0xD000:
 		c.iDxyn(c.conv.iToVx(instruction), c.conv.iToVy(instruction), c.conv.iToN(instruction))
 	case 0xE000:
