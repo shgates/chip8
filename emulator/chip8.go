@@ -11,6 +11,9 @@ const (
 
 	DISPLAY_WIDTH  = 64
 	DISPLAY_HEIGHT = 32
+
+	V0_IDX = 0
+	VF_IDX = 15
 )
 
 var sprites = []uint8{
@@ -61,10 +64,7 @@ func NewChip8() *Chip8 {
 		shouldDraw: true,
 		beeper:     func() {},
 	}
-
-	for i, sprite := range sprites {
-		chip8.memory[i] = sprite
-	}
+	copy(chip8.memory[:], sprites)
 
 	return &chip8
 }
@@ -124,11 +124,11 @@ func (c *Chip8) NextInstruction(instruction uint16) {
 		case 0x0005:
 			c.i8xy5(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x0006:
-			c.i8xy6(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
+			c.i8xy6(c.conv.iToVx(instruction))
 		case 0x0007:
 			c.i8xy7(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
 		case 0x000E:
-			c.i8xyE(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
+			c.i8xyE(c.conv.iToVx(instruction))
 		}
 	case 0x9000:
 		c.i9xy0(c.conv.iToVx(instruction), c.conv.iToVy(instruction))
@@ -143,14 +143,31 @@ func (c *Chip8) NextInstruction(instruction uint16) {
 	case 0xE000:
 		switch instruction & 0x00FF {
 		case 0x009E:
-
+			c.iEx9E(c.conv.iToVx(instruction))
 		case 0x00A1:
-
+			c.iExA1(c.conv.iToVx(instruction))
 		}
 	case 0xF000:
-		switch instruction & 0x0000 {
+		switch instruction & 0x00FF {
+		case 0x0007:
+			c.iFx07(c.conv.iToVx(instruction))
+		case 0x000A:
+			c.iFx0A(c.conv.iToVx(instruction))
+		case 0x0015:
+			c.iFx15(c.conv.iToVx(instruction))
+		case 0x0018:
+			c.iFx18(c.conv.iToVx(instruction))
+		case 0x001E:
+			c.iFx1E(c.conv.iToVx(instruction))
+		case 0x0029:
+			c.iFx29(c.conv.iToVx(instruction))
+		case 0x0033:
+			c.iFx33(c.conv.iToVx(instruction))
+		case 0x0055:
+			c.iFx55(c.conv.iToVx(instruction))
+		case 0x0065:
+			c.iFx65(c.conv.iToVx(instruction))
 		}
-
 	}
 }
 
@@ -220,129 +237,204 @@ func (c *Chip8) i5xy0(Vx uint8, Vy uint8) {
 //
 // Set Vx = kk.
 func (c *Chip8) i6xkk(Vx uint8, kk uint8) {
-	for i, register := range c.v {
-		if register == Vx {
-			c.v[i] = kk
-		}
-	}
+	c.v[Vx] = kk
 }
 
 // 7xkk - ADD Vx, byte
 //
 // Set Vx = Vx + kk.
 func (c *Chip8) i7xkk(Vx uint8, kk uint8) {
-	for i, register := range c.v {
-		if register == Vx {
-			c.v[i] = register + kk
-		}
-	}
+	c.v[Vx] = Vx + kk
 }
 
 // 8xy0 - LD Vx, Vy
 //
 // Set Vx = Vy.
 func (c *Chip8) i8xy0(Vx uint8, Vy uint8) {
-	for i, register := range c.v {
-		if register == Vx {
-			c.v[i] = Vy
-		}
-	}
+	c.v[Vx] = Vy
 }
 
 // 8xy1 - OR Vx, Vy
 //
 // Set Vx = Vx OR Vy.
 func (c *Chip8) i8xy1(Vx uint8, Vy uint8) {
-	for i, register := range c.v {
-		if register == Vx {
-			c.v[i] = Vx | Vy
-		}
-	}
+	c.v[Vx] = Vx | Vy
 }
 
 // 8xy2 - AND Vx, Vy
 //
 // Set Vx = Vx AND Vy.
 func (c *Chip8) i8xy2(Vx uint8, Vy uint8) {
-	for i, register := range c.v {
-		if register == Vx {
-			c.v[i] = Vx & Vy
-		}
-	}
+	c.v[Vx] = Vx & Vy
 }
 
 // 8xy3 - XOR Vx, Vy
 //
 // Set Vx = Vx XOR Vy.
 func (c *Chip8) i8xy3(Vx uint8, Vy uint8) {
-	for i, register := range c.v {
-		if register == Vx {
-			c.v[i] = Vx ^ Vy
-		}
-	}
+	c.v[Vx] = Vx ^ Vy
 }
 
 // 8xy4 - ADD Vx, Vy
 //
 // Set Vx = Vx + Vy, set VF = carry.
 func (c *Chip8) i8xy4(Vx uint8, Vy uint8) {
-	for i, register := range c.v {
-		if register == Vx {
-			sum := uint16(Vx) + uint16(Vy)
-			c.v[i] = uint8(sum)
-			if sum > 255 {
-				c.v[15] = 1
-			} else {
-				c.v[15] = 0
-			}
-		}
+	sum := uint16(Vx) + uint16(Vy)
+	c.v[Vx] = uint8(sum)
+	if sum > 255 {
+		c.v[VF_IDX] = 1
+	} else {
+		c.v[VF_IDX] = 0
 	}
 }
 
+// 8xy5 - SUB Vx, Vy
+//
+// Set Vx = Vx - Vy, set VF = NOT borrow.
 func (c *Chip8) i8xy5(Vx uint8, Vy uint8) {
-
+	if Vx > Vy {
+		c.v[VF_IDX] = 1
+	} else {
+		c.v[VF_IDX] = 0
+	}
+	c.v[Vx] = Vx - Vy
 }
 
-func (c *Chip8) i8xy6(Vx uint8, Vy uint8) {
-
+// 8xy6 - SHR Vx {, Vy}
+//
+// Set Vx = Vx SHR 1.
+func (c *Chip8) i8xy6(Vx uint8) {
+	if c.v[Vx]&0x1 == 1 {
+		c.v[VF_IDX] = 1
+	} else {
+		c.v[VF_IDX] = 0
+	}
+	c.v[Vx] = c.v[Vx] >> 1
 }
 
+// 8xy7 - SUBN Vx, Vy
+//
+// Set Vx = Vy - Vx, set VF = NOT borrow.
 func (c *Chip8) i8xy7(Vx uint8, Vy uint8) {
-
+	if Vy > Vx {
+		c.v[VF_IDX] = 1
+	} else {
+		c.v[VF_IDX] = 0
+	}
+	c.v[Vx] = Vy - Vx
 }
 
-func (c *Chip8) i8xyE(Vx uint8, Vy uint8) {
-
+// 8xyE - SHL Vx {, Vy}
+//
+// Set Vx = Vx SHL 1.
+func (c *Chip8) i8xyE(Vx uint8) {
+	if (c.v[Vx]>>3)&0x1 == 1 {
+		c.v[VF_IDX] = 1
+	} else {
+		c.v[VF_IDX] = 0
+	}
+	c.v[Vx] = c.v[Vx] << 1
 }
 
-func (c *Chip8) i9xy0(Vx uint8, Vy uint8) {}
+// 9xy0 - SNE Vx, Vy
+//
+// Skip next instruction if Vx != Vy.
+func (c *Chip8) i9xy0(Vx uint8, Vy uint8) {
+	if Vx != Vy {
+		c.pc += 2
+	}
+}
 
-func (c *Chip8) iAnnn(addr uint16) {}
+// Annn - LD I, addr
+//
+// Set I = nnn.
+func (c *Chip8) iAnnn(addr uint16) {
+	c.i = addr
+}
 
-func (c *Chip8) iBnnn(addr uint16) {}
+// Bnnn - JP V0, addr
+//
+// Jump to location nnn + V0.
+func (c *Chip8) iBnnn(addr uint16) {
+	c.pc = addr + uint16(c.v[0])
+}
 
+// Cxkk - RND Vx, byte
+//
+// Set Vx = random byte AND kk.
 func (c *Chip8) iCxkk(Vx uint8, kk uint8) {}
 
-func (c *Chip8) iDxyn(Vx uint8, Vy uint8, n uint8) {}
+// Dxyn - DRW Vx, Vy, nibble
 
-func (c *Chip8) iEx9E(Vx uint8) {}
+// Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+func (c *Chip8) iDxyn(Vx uint8, Vy uint8, n uint8) {
+	c.shouldDraw = true
 
+}
+
+// Ex9E - SKP Vx
+//
+// Skip next instruction if key with the value of Vx is pressed.
+func (c *Chip8) iEx9E(Vx uint8) {
+
+}
+
+// ExA1 - SKNP Vx
+//
+// Skip next instruction if key with the value of Vx is not pressed.
 func (c *Chip8) iExA1(Vx uint8) {}
 
-func (c *Chip8) iFx07(Vx uint8) {}
+// Fx07 - LD Vx, DT
+//
+// Set Vx = delay timer value.
+func (c *Chip8) iFx07(Vx uint8) {
+	c.v[Vx] = c.dt
+}
 
+// Fx0A - LD Vx, K
+//
+// Wait for a key press, store the value of the key in Vx.
 func (c *Chip8) iFx0A(Vx uint8) {}
 
-func (c *Chip8) iFx15(Vx uint8) {}
+// Fx15 - LD DT, Vx
+//
+// Set delay timer = Vx.
+func (c *Chip8) iFx15(Vx uint8) {
+	c.dt = c.v[Vx]
+}
 
-func (c *Chip8) iFx18(Vx uint8) {}
+// Fx18 - LD ST, Vx
+//
+// Set sound timer = Vx.
+func (c *Chip8) iFx18(Vx uint8) {
+	c.st = c.v[Vx]
+}
 
-func (c *Chip8) iFx1E(Vx uint8) {}
+// Fx1E - ADD I, Vx
+//
+// Set I = I + Vx.
+func (c *Chip8) iFx1E(Vx uint8) {
+	c.i += uint16(c.v[Vx])
+}
 
-func (c *Chip8) iFx29(Vx uint8) {}
+// Fx29 - LD F, Vx
+//
+// Set I = location of sprite for digit Vx.
+func (c *Chip8) iFx29(Vx uint8) {
 
+}
+
+// Fx33 - LD B, Vx
+//
+// Store BCD representation of Vx in memory locations I, I+1, and I+2.
 func (c *Chip8) iFx33(Vx uint8) {}
 
+// Fx55 - LD [I], Vx
+//
+// Store registers V0 through Vx in memory starting at location I.
 func (c *Chip8) iFx55(Vx uint8) {}
 
+// Fx65 - LD Vx, [I]
+//
+// Read registers V0 through Vx from memory starting at location I.
 func (c *Chip8) iFx65(Vx uint8) {}
