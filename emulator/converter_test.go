@@ -6,28 +6,53 @@ import (
 
 var conv = Converter{}
 
-func testConvNnn(t *testing.T) {
-	var instruction uint16
-	converted := conv.iToNnn(instruction)
+func TestConvNnn(t *testing.T) {
+	var instruction uint16 = 0xA123
+	var expected uint16 = 0x123
+	got := conv.iToNnn(instruction)
+
+	if got != expected {
+		t.Errorf("iToNnn(%X) = %X; want %X", instruction, got, expected)
+	}
+}
+
+func TestConvN(t *testing.T) {
+	var instruction uint16 = 0xA123
+	var expected uint8 = 0x3
+	got := conv.iToN(instruction)
+
+	if got != expected {
+		t.Errorf("iToN(%X) = %X; want %X", instruction, got, expected)
+	}
+}
+
+func TestConvVx(t *testing.T) {
+	var instruction uint16 = 0xA123
+	var expected uint8 = 0x1
+	got := conv.iToVx(instruction)
+
+	if got != expected {
+		t.Errorf("iToVx(%X) = %X; want %X", instruction, got, expected)
+	}
+}
+
+func TestConvVy(t *testing.T) {
+	var instruction uint16 = 0xA123
+	var expected uint8 = 0x2
+	got := conv.iToVy(instruction)
+
+	if got != expected {
+		t.Errorf("iToVy(%X) = %X; want %X", instruction, got, expected)
+	}
 
 }
 
-func testConvVx(t *testing.T) {
-	var instruction uint16
-	conv.iToVx(instruction)
-}
+func TestConvKk(t *testing.T) {
+	var instruction uint16 = 0xA123
+	var expected uint8 = 0x23
+	got := conv.iToKk(instruction)
 
-func testConvVy(t *testing.T) {
-	var instruction uint16
-	conv.iToVy(instruction)
-}
-
-func testConvKk(t *testing.T) {
-	var instruction uint16
-	conv.iToKk(instruction)
-}
-
-func testConvN(t *testing.T) {
-	var instruction uint16
-	conv.iToN(instruction)
+	if got != expected {
+		t.Errorf("iToKk(%X) = %X; want %X", instruction, got, expected)
+	}
 }

@@ -14,12 +14,12 @@ func (c Converter) iToN(i uint16) uint8 {
 
 // Converts an instruction (uint16) to x (the lower 4 bits of the high byte of the instruction)
 func (c Converter) iToVx(i uint16) uint8 {
-	return uint8(i & 0x0F00)
+	return uint8((i & 0x0F00) >> 8)
 }
 
 // Converts an instruction (uint16) to y (the upper 4 bits of the low byte of the instruction)
 func (c Converter) iToVy(i uint16) uint8 {
-	return uint8(i & 0x00F0)
+	return uint8((i & 0x00F0) >> 4)
 }
 
 // Converts an instruction (uint16) to kk (the lowest 8 bits of the instruction)
