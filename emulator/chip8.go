@@ -2,6 +2,7 @@ package emulator
 
 import (
 	"errors"
+	"math/rand"
 )
 
 const (
@@ -49,10 +50,11 @@ type Chip8 struct {
 
 	// Display buffer
 	display [DISPLAY_WIDTH * DISPLAY_HEIGHT]uint8
+	// TODO: keyboard [T]
 
 	shouldDraw bool
-	beeper     func()
-	rom        string
+	beeper     func() // beep function
+	rom        string // rom path
 
 	// Util struct to do some conversions
 	conv Converter
@@ -73,7 +75,7 @@ func (c *Chip8) AddBeep(fn func()) {
 	c.beeper = fn
 }
 
-// Load ROM.
+// TODO: Load ROM.
 func (c *Chip8) LoadROM(rom string) error {
 	if len(rom) == 0 {
 		return errors.New("rom doesn't exist")
@@ -82,11 +84,26 @@ func (c *Chip8) LoadROM(rom string) error {
 	return nil
 }
 
-// Run the emulator.
-func (c Chip8) Run() {}
+// TODO: Run the emulator.
+func (c Chip8) Run() {
+
+	for {
+		if false {
+			c.ExecuteNextInstruction(c.memory[:])
+		}
+	}
+}
+
+// Read the memory and return an uint16 instruction.
+func (c Chip8) getInstruction(memory []uint8) uint16 {
+	first_byte, second_byte := uint16(memory[c.pc]), uint16(memory[c.pc+1])
+	return (first_byte << 8) | second_byte
+}
 
 // Executes Chip-8's next instruction.
-func (c *Chip8) NextInstruction(instruction uint16) {
+func (c *Chip8) ExecuteNextInstruction(memory []uint8) {
+	instruction := c.getInstruction(memory)
+
 	switch instruction & 0xF000 {
 	case 0x0000:
 		switch instruction & 0x00FF {
@@ -362,13 +379,17 @@ func (c *Chip8) iBnnn(addr uint16) {
 // Cxkk - RND Vx, byte
 //
 // Set Vx = random byte AND kk.
-func (c *Chip8) iCxkk(Vx uint8, kk uint8) {}
+func (c *Chip8) iCxkk(Vx uint8, kk uint8) {
+	c.v[Vx] = uint8(rand.Intn(256)) & kk
+}
 
 // Dxyn - DRW Vx, Vy, nibble
-
+//
 // Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
 func (c *Chip8) iDxyn(Vx uint8, Vy uint8, n uint8) {
 	c.shouldDraw = true
+	var bytes []uint8
+	copy(bytes, c.memory[c.i:n])
 
 }
 
